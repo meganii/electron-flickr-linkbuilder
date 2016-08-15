@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Electron Flickr</title>
+  </head>
+  <body>
+    <div id="root" class="container">
+      <h1>Flickr</h1>
+      <div id="link"></div>
+      <div id="result"></div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mithril/0.2.2-rc.1/mithril.min.js"></script>
+    <script>
+
+      const Config = require('config');
+      const API_KEY = Config.API_KEY;
+      const USER_ID = Config.USER_ID;
+
+      var photos = m.prop([]);
+      var textContext = m.prop();
+
+      var linkComponent = {
+        controller: function() {
+          textContext("");
+        },
+        view: function(ctrl) {
+          return m("textarea", {name: "linktextarea", class: "form-control", rows: 5}, textContext());
+        }
+      }
+
+      var resultComponent = {
+        controller: function() {
+          this.createLink = function(index) {
+            var item = photos().photos.photo[index];
+
+            var link = '<p><a href="https://www.flickr.com/photos/' + item.owner + '/' + item.id + '" title="' + item.title + 'by meganii, on Flickr"><img class="img-responsive" src="https://farm' + item.farm + '.staticflickr.com/' + item.server +'/' + item.id + '_' + item.secret + '_z.jpg" alt="' + item.title + '"></a></p>\n';
+
+            textContext(textContext() + link);
+          };
+
+          m.request({
+            dataType: "jsonp",
+            callbackKey: "jsoncallback",
+            url: "https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=" + API_KEY + "&user_id=" + USER_ID+ "&sort=date-posted-desc&format=json"
+          }).then(photos);
+        },
+
+        view: function(ctrl) {
+          return m("ul",[
+              photos().photos.photo.map(function(item, index) {
+                 return m("li", [
+                   m("input[type=checkbox]", {onclick: m.withAttr("value", ctrl.createLink), value: index } ),
+                   m("img", {src: "https://farm" + item.farm + ".staticflickr.com/" + item.server + "/" + item.id + "_" + item.secret + "_z.jpg"})
+                 ])
+              })
+          ])
+        }
+      }
+
+      m.mount(result, resultComponent);
+      m.mount(link, linkComponent);
+
+    </script>
+  </body>
+</html>
